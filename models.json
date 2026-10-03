@@ -33,7 +33,7 @@
     },
     "m4320": {
         "id": "m4320",
-        "label": "Nice M4320-PRO",
+        "label": "Panamax M4320-PRO",
         "banks": 8,
         "protocol": "telnet",
         "smartlink": false,

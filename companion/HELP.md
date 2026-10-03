@@ -13,7 +13,7 @@
 - Set Bank Trigger
 - Set Brightness
 
-The Nice M4320-PRO uses Telnet on port 23 and does not require a Device ID.
+The Panamax M4320-PRO uses Telnet on port 23 and does not require a Device ID.
 It supports all documented control and configuration commands, device queries,
 live variables, and feedbacks for outlet, power, fault, and trigger status.
 

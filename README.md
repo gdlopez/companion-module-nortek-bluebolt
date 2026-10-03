@@ -6,7 +6,7 @@ Controls BlueBolt Compatible sequencers from Furman and Panamax
 
 **Next**
 
-- Add support for Nice M4320-PRO
+- Add support for Panamax M4320-PRO
 - Fix Telnet option negotiation for Telnet-controlled models
 
 **V2.4.0**
