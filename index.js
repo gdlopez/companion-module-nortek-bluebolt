@@ -49,6 +49,7 @@ module.exports = class BlueBoltInstance extends InstanceBase {
     }
     this.model = models[this.config.model];
     this.varStates = {};
+    this.telnetBuffer = "";
 
     this.updateStatus(InstanceStatus.Connecting);
 
@@ -82,15 +83,16 @@ module.exports = class BlueBoltInstance extends InstanceBase {
 
         this.telnet.on("status_change", (status) => {
           this.updateStatus(status);
+          if (status === InstanceStatus.Ok && this.model.id == "m4320") {
+            this.refreshM4320Status();
+          }
         });
 
-        // not yet supported
-        /*
 		this.telnet.on("data", (data) => {
-          this.incomingData(data)
-        });*/
+          this.incomingDataTelnet(data);
+        });
 
-        this.telnet.on("iac", function (type, info) {
+        this.telnet.on("iac", (type, info) => {
           // tell remote we WONT do anything we're asked to DO
           if (type == "DO") {
             this.telnet.write(Buffer.from([255, 252, info]));
@@ -278,6 +280,100 @@ module.exports = class BlueBoltInstance extends InstanceBase {
       }
       this.setVariableValues(this.varStates);
       this.checkAllFeedbacks();
+    }
+  }
+
+  incomingDataTelnet(data) {
+    this.telnetBuffer += data.toString("utf8");
+    const messages = this.telnetBuffer.split(/\r\n|\r|\n/);
+    this.telnetBuffer = messages.pop() ?? "";
+
+    for (const message of messages) {
+      this.parseTelnetMessage(message);
+    }
+  }
+
+  parseTelnetMessage(message) {
+    const line = message.trim().replace(/^>\s*/, "");
+    if (!line) {
+      return;
+    }
+
+    this.varStates.last_message = line;
+    if (!line.startsWith("$")) {
+      this.setVariableValues(this.varStates);
+      return;
+    }
+
+    let match;
+    if ((match = line.match(/^\$OUTLET(\d+)\s*=\s*(ON|OFF)$/i))) {
+      this.varStates[`outlet${match[1]}`] = match[2].toUpperCase();
+    } else if ((match = line.match(/^\$VOLTAGE\s*=\s*(\d+(?:\.\d+)?)$/i))) {
+      this.varStates.voltage = Number(match[1]);
+    } else if ((match = line.match(/^\$CURRENT\s*=\s*(\d+(?:\.\d+)?)$/i))) {
+      // The M4320 reports current in tenths of an amp (33 means 3.3 A).
+      this.varStates.current = Number(match[1]) / 10;
+    } else if ((match = line.match(/^\$PWR\s*=\s*(.+)$/i))) {
+      this.varStates.power_status = match[1].trim().toUpperCase();
+    } else if ((match = line.match(/^\$BREAKER\s*=\s*(FAULT|OK)$/i))) {
+      this.varStates.breaker = match[1].toUpperCase();
+    } else if ((match = line.match(/^\$WIRE\s+FAULT\s*=\s*(FAULT|OK)$/i))) {
+      this.varStates.wire_fault = match[1].toUpperCase();
+    } else if ((match = line.match(/^\$TEMPERATURE\s*=\s*(FAULT|OK)$/i))) {
+      this.varStates.temperature = match[1].toUpperCase();
+    } else if ((match = line.match(/^\$AVM\s*=\s*(FAULT|OK)$/i))) {
+      this.varStates.avm = match[1].toUpperCase();
+    } else if ((match = line.match(/^\$TRIGIN\s*=\s*(ON|OFF)$/i))) {
+      this.varStates.trigger_input = match[1].toUpperCase();
+    } else if ((match = line.match(/^\$BUTTON_([12])\s*=\s*TRIGGERED$/i))) {
+      this.varStates.last_event = `BUTTON_${match[1]} TRIGGERED`;
+    } else if ((match = line.match(/^\$GREEN MODE\s*=\s*(ON|OFF)$/i))) {
+      this.varStates.green_mode = match[1].toUpperCase();
+    } else if (line.toUpperCase() == "$ENTERING GREEN MODE") {
+      this.varStates.green_mode = "ON";
+      this.varStates.last_event = "ENTERING GREEN MODE";
+    } else if (line.toUpperCase() == "$LEAVING GREEN MODE") {
+      this.varStates.green_mode = "OFF";
+      this.varStates.last_event = "LEAVING GREEN MODE";
+    } else if ((match = line.match(/^\$FEEDBACK\s*=\s*(ON|OFF)$/i))) {
+      this.varStates.feedback_mode = match[1].toUpperCase();
+    } else if ((match = line.match(/^\$LINEFEED\s*=\s*(ON|OFF)$/i))) {
+      this.varStates.linefeed_mode = match[1].toUpperCase();
+    } else if ((match = line.match(/^\$PROFILE(?:\s*=)?\s*(\d)/i))) {
+      this.varStates.profile = match[1];
+    } else if ((match = line.match(/^\$FIRMWARE:\s*(.+)$/i))) {
+      this.varStates.firmware = match[1].trim();
+    } else if (line.toUpperCase() == "$PANAMAX") {
+      this.varStates.vendor = "Panamax";
+    } else if (line.toUpperCase() == "$M4320-PRO") {
+      this.varStates.device_model = "M4320-PRO";
+    } else if ((match = line.match(/^\$TRIGGER FOR (\d+)\s*=\s*(.+)$/i))) {
+      this.varStates[`outlet${match[1]}_trigger`] = match[2].trim();
+    } else if (
+      (match = line.match(/^\$DELAY FOR (\d+)\s*=\s*(\d+)\s*[, ]\s*(\d+)$/i))
+    ) {
+      this.varStates[`outlet${match[1]}_on_delay`] = Number(match[2]);
+      this.varStates[`outlet${match[1]}_off_delay`] = Number(match[3]);
+    } else if ((match = line.match(/^\$REBOOT_DELAY([12])\s*=\s*(\d+)$/i))) {
+      this.varStates[`reboot${match[1]}_delay`] = Number(match[2]);
+    }
+
+    this.setVariableValues(this.varStates);
+    this.checkAllFeedbacks();
+  }
+
+  refreshM4320Status() {
+    for (const query of [
+      "?ID",
+      "?FAULTSTAT",
+      "?TRIGSTAT",
+      "?OUTLETSTAT",
+      "?POWERSTAT",
+      "?VOLTAGE",
+      "?CURRENT",
+      "?LIST_CONFIG",
+    ]) {
+      this.sendBlueBolt(query);
     }
   }
 

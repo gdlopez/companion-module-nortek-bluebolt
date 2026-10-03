@@ -13,6 +13,10 @@
 - Set Bank Trigger
 - Set Brightness
 
+The Nice M4320-PRO uses Telnet on port 23 and does not require a Device ID.
+It supports all documented control and configuration commands, device queries,
+live variables, and feedbacks for outlet, power, fault, and trigger status.
+
 **Available variables for Bluebolt** (Depends on module connected)
 
 - Current Voltage
@@ -43,3 +47,10 @@
 
 - Toggle Bank 1..N (per-bank, requires polling to be enabled)
 - Built-in Bank Power Status feedback styling (green when bank is ON)
+
+**Available presets for M4320-PRO**
+
+- Outlet 1–8 toggle, on, off, and 30-second cycle buttons
+- All on/off, green sequence, Reboot 1/2, and status refresh
+- Profile 1–4 selection with active-profile highlighting
+- Power, breaker, wiring, temperature, AVM, and DC trigger indicators

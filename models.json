@@ -31,6 +31,14 @@
         "smartlink": false,
         "deviceID": "N/A"
     },
+    "m4320": {
+        "id": "m4320",
+        "label": "Nice M4320-PRO",
+        "banks": 8,
+        "protocol": "telnet",
+        "smartlink": false,
+        "deviceID": "N/A"
+    },
     "bb232": {
         "id": "bb232",
         "label": "Furman BB-RS232",

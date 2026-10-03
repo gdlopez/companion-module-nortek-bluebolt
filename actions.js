@@ -254,14 +254,149 @@ exports.updateActions = function () {
           choices: [
             { id: "ON", label: "On" },
             { id: "OFF", label: "Off" },
+            ...(this.model.id == "m4320"
+              ? [{ id: "TOGGLE", label: "Toggle" }]
+              : []),
           ],
         },
       ],
       callback: async (event) => {
         let bank = event.options.id_bank;
-        this.sendBlueBolt(`!SWITCH ${bank} ${event.options.id_power_option}`);
+        let powerOption = event.options.id_power_option;
+        if (powerOption == "TOGGLE") {
+          const currentState = this.varStates[`outlet${bank}`];
+          if (currentState != "ON" && currentState != "OFF") {
+            this.log("error", "Toggle requires a known outlet state; refreshing status");
+            this.sendBlueBolt("?OUTLETSTAT");
+            return;
+          }
+          powerOption = currentState == "ON" ? "OFF" : "ON";
+        }
+        this.sendBlueBolt(`!SWITCH ${bank} ${powerOption}`);
       },
     };
+    if (this.model.id == "m4320") {
+      actions["telnet_cmd_cycle"] = {
+        name: "Cycle Outlet",
+        options: [
+          {
+            type: "number",
+            id: "id_bank",
+            label: "Outlet",
+            default: 1,
+            min: 1,
+            max: this.model.banks,
+          },
+          {
+            type: "number",
+            id: "id_delay",
+            label: "Off Time (seconds)",
+            default: 30,
+            min: 1,
+            max: 65535,
+          },
+        ],
+        callback: async (event) => {
+          this.sendBlueBolt(
+            `#CYCLE ${event.options.id_bank}:${event.options.id_delay}`,
+          );
+        },
+      };
+      actions["telnet_set_feedback"] = {
+        name: "Set Feedback Mode",
+        options: [
+          {
+            type: "dropdown",
+            id: "mode",
+            label: "Unsolicited Feedback",
+            default: "ON",
+            choices: [
+              { id: "ON", label: "On" },
+              { id: "OFF", label: "Off" },
+            ],
+          },
+        ],
+        callback: async (event) => {
+          this.sendBlueBolt(`!SET_FEEDBACK ${event.options.mode}`);
+        },
+      };
+      actions["telnet_set_linefeed"] = {
+        name: "Set Linefeed Mode",
+        options: [
+          {
+            type: "dropdown",
+            id: "mode",
+            label: "Linefeed",
+            default: "ON",
+            choices: [
+              { id: "ON", label: "On" },
+              { id: "OFF", label: "Off" },
+            ],
+          },
+        ],
+        callback: async (event) => {
+          this.sendBlueBolt(`!SET_LINEFEED ${event.options.mode}`);
+        },
+      };
+      actions["telnet_set_profile"] = {
+        name: "Set Profile",
+        options: [
+          {
+            type: "dropdown",
+            id: "profile",
+            label: "Profile",
+            default: "1",
+            choices: [1, 2, 3, 4].map((profile) => ({
+              id: profile.toString(),
+              label: `Profile ${profile}`,
+            })),
+          },
+        ],
+        callback: async (event) => {
+          this.sendBlueBolt(`!SET_PROFILE ${event.options.profile}`);
+        },
+      };
+      actions["telnet_reset_all"] = {
+        name: "Restore Factory Settings",
+        description: "Resets triggers, delays, feedback, linefeed, and profile",
+        options: [],
+        callback: async () => {
+          this.sendBlueBolt("!RESET_ALL");
+        },
+      };
+      actions["telnet_query"] = {
+        name: "Query Device",
+        options: [
+          {
+            type: "dropdown",
+            id: "query",
+            label: "Query",
+            default: "?OUTLETSTAT",
+            choices: [
+              { id: "?ID", label: "Identity and Firmware" },
+              { id: "?FAULTSTAT", label: "Fault Status" },
+              { id: "?TRIGSTAT", label: "Trigger Status" },
+              { id: "?OUTLETSTAT", label: "Outlet Status" },
+              { id: "?POWERSTAT", label: "Power Status" },
+              { id: "?VOLTAGE", label: "Line Voltage" },
+              { id: "?CURRENT", label: "Current Draw" },
+              { id: "?HELP", label: "Command Help" },
+              { id: "?LIST_CONFIG", label: "Configuration" },
+            ],
+          },
+        ],
+        callback: async (event) => {
+          this.sendBlueBolt(event.options.query);
+        },
+      };
+      actions["telnet_refresh_status"] = {
+        name: "Refresh All Status",
+        options: [],
+        callback: async () => {
+          this.refreshM4320Status();
+        },
+      };
+    }
     actions["telnet_set_trigger_source"] = {
       name: "Set Trigger Source",
       options: [
@@ -336,7 +471,7 @@ exports.updateActions = function () {
           id: "id_delay_on",
           label: "On Delay",
           default: 1,
-          min: 1,
+          min: this.model.id == "m4320" ? 0 : 1,
           max: 255,
         },
         {
@@ -344,7 +479,7 @@ exports.updateActions = function () {
           id: "id_delay_off",
           label: "Off Delay",
           default: 1,
-          min: 1,
+          min: this.model.id == "m4320" ? 0 : 1,
           max: 255,
         },
       ],

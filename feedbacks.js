@@ -1,6 +1,151 @@
 const { combineRgb, Regex } = require("@companion-module/base");
 
 exports.updateFeedbacks = function () {
+  if (this.model.id == "m4320") {
+    const feedbacks = {
+      outletStatus: {
+        type: "boolean",
+        name: "Outlet Power Status",
+        defaultStyle: {
+          bgcolor: combineRgb(0, 204, 0),
+          color: combineRgb(0, 0, 0),
+        },
+        options: [
+          {
+            type: "number",
+            id: "outlet",
+            label: "Outlet",
+            default: 1,
+            min: 1,
+            max: this.model.banks,
+          },
+          {
+            type: "dropdown",
+            id: "state",
+            label: "Power Status",
+            default: "ON",
+            choices: [
+              { id: "ON", label: "On" },
+              { id: "OFF", label: "Off" },
+            ],
+          },
+        ],
+        callback: (feedback) =>
+          this.varStates[`outlet${feedback.options.outlet}`] ==
+          feedback.options.state,
+      },
+      powerStatus: {
+        type: "boolean",
+        name: "Input Power Status",
+        defaultStyle: {
+          bgcolor: combineRgb(255, 0, 0),
+          color: combineRgb(255, 255, 255),
+        },
+        options: [
+          {
+            type: "dropdown",
+            id: "state",
+            label: "Power Status",
+            default: "NORMAL",
+            choices: [
+              { id: "NORMAL", label: "Normal" },
+              { id: "OVERVOLTAGE", label: "Overvoltage" },
+              { id: "UNDERVOLTAGE", label: "Undervoltage" },
+              { id: "RECOVERY", label: "Recovery" },
+              { id: "FAULT", label: "Fault" },
+              { id: "OK", label: "OK" },
+              { id: "ON", label: "On" },
+              { id: "OFF", label: "Off" },
+            ],
+          },
+        ],
+        callback: (feedback) =>
+          this.varStates.power_status == feedback.options.state,
+      },
+      faultStatus: {
+        type: "boolean",
+        name: "Fault Status",
+        defaultStyle: {
+          bgcolor: combineRgb(255, 0, 0),
+          color: combineRgb(255, 255, 255),
+        },
+        options: [
+          {
+            type: "dropdown",
+            id: "fault",
+            label: "Sensor",
+            default: "breaker",
+            choices: [
+              { id: "breaker", label: "Breaker" },
+              { id: "wire_fault", label: "Wiring" },
+              { id: "temperature", label: "Temperature" },
+              { id: "avm", label: "AVM" },
+            ],
+          },
+          {
+            type: "dropdown",
+            id: "state",
+            label: "Status",
+            default: "FAULT",
+            choices: [
+              { id: "FAULT", label: "Fault" },
+              { id: "OK", label: "OK" },
+            ],
+          },
+        ],
+        callback: (feedback) =>
+          this.varStates[feedback.options.fault] == feedback.options.state,
+      },
+      triggerInput: {
+        type: "boolean",
+        name: "DC Trigger Input",
+        defaultStyle: {
+          bgcolor: combineRgb(0, 204, 0),
+          color: combineRgb(0, 0, 0),
+        },
+        options: [
+          {
+            type: "dropdown",
+            id: "state",
+            label: "Trigger Status",
+            default: "ON",
+            choices: [
+              { id: "ON", label: "On" },
+              { id: "OFF", label: "Off" },
+            ],
+          },
+        ],
+        callback: (feedback) =>
+          this.varStates.trigger_input == feedback.options.state,
+      },
+      profileSelected: {
+        type: "boolean",
+        name: "Selected Profile",
+        defaultStyle: {
+          bgcolor: combineRgb(0, 204, 0),
+          color: combineRgb(0, 0, 0),
+        },
+        options: [
+          {
+            type: "dropdown",
+            id: "profile",
+            label: "Profile",
+            default: "1",
+            choices: [1, 2, 3, 4].map((profile) => ({
+              id: profile.toString(),
+              label: `Profile ${profile}`,
+            })),
+          },
+        ],
+        callback: (feedback) =>
+          this.varStates.profile == feedback.options.profile,
+      },
+    };
+
+    this.setFeedbackDefinitions(feedbacks);
+    return;
+  }
+
   if (this.model.variables) {
     var feedbacks = {};
     if (this.model.variables.power === true) {

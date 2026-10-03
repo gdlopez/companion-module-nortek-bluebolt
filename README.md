@@ -4,6 +4,11 @@ See [HELP.md](./HELP.md) and [LICENSE](./LICENSE)
 
 Controls BlueBolt Compatible sequencers from Furman and Panamax
 
+**Next**
+
+- Add support for Nice M4320-PRO
+- Fix Telnet option negotiation for Telnet-controlled models
+
 **V2.4.0**
 
 - Support for companion module API v2
