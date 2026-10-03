@@ -91,6 +91,24 @@ test("buffers fragmented Telnet messages", () => {
   assert.equal(context.telnetBuffer, "");
 });
 
+test("sends Telnet commands through the current TelnetHelper API", () => {
+  const sent = [];
+  const context = {
+    model: { protocol: "telnet" },
+    telnet: {
+      send(message) {
+        sent.push(message);
+        return true;
+      },
+    },
+    log() {},
+  };
+
+  BlueBoltInstance.prototype.sendBlueBolt.call(context, "?ID");
+
+  assert.deepEqual(sent, ["?ID\r"]);
+});
+
 test("exposes every documented M4320 command and query", async () => {
   const sent = [];
   const context = {

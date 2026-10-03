@@ -95,12 +95,12 @@ module.exports = class BlueBoltInstance extends InstanceBase {
         this.telnet.on("iac", (type, info) => {
           // tell remote we WONT do anything we're asked to DO
           if (type == "DO") {
-            this.telnet.write(Buffer.from([255, 252, info]));
+            this.telnet.send(Buffer.from([255, 252, info]));
           }
 
           // tell the remote DONT do whatever they WILL offer
           if (type == "WILL") {
-            this.telnet.write(Buffer.from([255, 254, info]));
+            this.telnet.send(Buffer.from([255, 254, info]));
           }
         });
       } else {
@@ -386,7 +386,7 @@ module.exports = class BlueBoltInstance extends InstanceBase {
       }
       this.udp.send(cmd);
     } else if (this.model.protocol == "telnet") {
-      this.telnet.write(cmd + "\r");
+      this.telnet.send(cmd + "\r");
     }
     this.log("debug", "Sent: " + cmd + " over " + this.model.protocol);
   }
