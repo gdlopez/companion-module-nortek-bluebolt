@@ -207,6 +207,17 @@ test("provides a complete set of useful M4320 presets", () => {
       "m4320_status",
     ],
   );
+  assert.equal(context.structure[0].definitions.length, 32);
+  assert.ok(
+    context.structure.every((section) =>
+      section.definitions.every((presetId) => typeof presetId === "string"),
+    ),
+  );
+  assert.ok(
+    context.structure.every((section) =>
+      section.definitions.every((presetId) => context.presets[presetId]),
+    ),
+  );
   assert.equal(
     context.presets.outlet_1_toggle.steps[0].down[0].actionId,
     "telnet_cmd_power",

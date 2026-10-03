@@ -61,14 +61,7 @@ exports.updatePresets = function () {
     structure.push({
       id: "bank_power",
       name: "Bank Power",
-      definitions: [
-        {
-          id: "toggle",
-          type: "simple",
-          name: "Toggle",
-          presets: togglePresetIds,
-        },
-      ],
+      definitions: togglePresetIds,
     });
   }
 
@@ -159,10 +152,10 @@ exports.updatePresets = function () {
       id: "m4320_outlet_power",
       name: "M4320 Outlet Power",
       definitions: [
-        { id: "toggle", type: "simple", name: "Toggle", presets: outletTogglePresetIds },
-        { id: "on", type: "simple", name: "On", presets: outletOnPresetIds },
-        { id: "off", type: "simple", name: "Off", presets: outletOffPresetIds },
-        { id: "cycle", type: "simple", name: "Cycle", presets: outletCyclePresetIds },
+        ...outletTogglePresetIds,
+        ...outletOnPresetIds,
+        ...outletOffPresetIds,
+        ...outletCyclePresetIds,
       ],
     });
 
@@ -196,9 +189,7 @@ exports.updatePresets = function () {
     structure.push({
       id: "m4320_system",
       name: "M4320 System Controls",
-      definitions: [
-        { id: "system", type: "simple", name: "System", presets: systemPresetIds },
-      ],
+      definitions: systemPresetIds,
     });
 
     const profilePresetIds = [];
@@ -241,9 +232,7 @@ exports.updatePresets = function () {
     structure.push({
       id: "m4320_profiles",
       name: "M4320 Profiles",
-      definitions: [
-        { id: "profiles", type: "simple", name: "Profiles", presets: profilePresetIds },
-      ],
+      definitions: profilePresetIds,
     });
 
     const statusPresets = [
@@ -285,9 +274,7 @@ exports.updatePresets = function () {
     structure.push({
       id: "m4320_status",
       name: "M4320 Status",
-      definitions: [
-        { id: "status", type: "simple", name: "Status", presets: statusPresetIds },
-      ],
+      definitions: statusPresetIds,
     });
   }
 
